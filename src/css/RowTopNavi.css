@@ -1,0 +1,29 @@
+/* src/css/RowTopNavi.css */
+/* RowTopNavi 컴포넌트 스타일 */
+
+.nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.nav-item {
+    margin: 0 15px;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 5px 10px;
+    border-radius: 0px;
+    transition: background-color 0.3s;
+    display: inline-block;
+}
+
+/* 호버 효과: 링크에 마우스가 올라갈 때 배경색 변경 */
+.nav-link:hover {
+    background-color: #555;
+}

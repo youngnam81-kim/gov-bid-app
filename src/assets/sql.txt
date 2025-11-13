@@ -1,0 +1,48 @@
+DROP TABLE KAMKO_MY_DATA CASCADE CONSTRAINTS;
+
+-- KAMKO_MY_DATA 테이블 생성
+CREATE TABLE KAMCO_MY_DATA (
+    USER_ID         VARCHAR2(255)       NOT NULL,   -- 사용자 ID (Primary Key의 일부)
+    CLTR_MNMT_NO    VARCHAR2(20)        NOT NULL,   -- 공매물건 관리 번호 (Primary Key의 일부)
+    CLTR_HSTR_NO    VARCHAR2(10)        NOT NULL,   -- 공매물건 이력 번호 (Primary Key의 일부)
+    IS_FAVORITE     CHAR(1)             DEFAULT 'N' NOT NULL, -- 즐겨찾기 여부 ('Y', 'N')
+    IS_BID          CHAR(1)             DEFAULT 'N' NOT NULL, -- 입찰 여부 ('Y', 'N')
+    BID_AMOUNT      NUMBER(15),                  -- 입찰 가격
+    REG_DATE        DATE                DEFAULT SYSDATE NOT NULL, -- 등록일
+    MOD_DATE        DATE                DEFAULT SYSDATE NOT NULL, -- 수정일
+    
+    -- 기본 키 정의: 사용자 ID + 물건 관리 번호 + 물건 이력 번호 조합
+    -- 이 조합으로 한 사용자가 한 물건에 대해 하나의 레코드만 가지도록 합니다.
+    CONSTRAINT PK_KAMCO_MY_DATA PRIMARY KEY (USER_ID, CLTR_MNMT_NO, CLTR_HSTR_NO),
+
+    -- IS_FAVORITE 값 제약 (Y 또는 N만 허용)
+    CONSTRAINT CK_KAMCO_MY_DATA_FAV CHECK (IS_FAVORITE IN ('Y', 'N')),
+    
+    -- IS_BID 값 제약 (Y 또는 N만 허용)
+    CONSTRAINT CK_KAMCO_MY_DATA_BID CHECK (IS_BID IN ('Y', 'N'))
+);
+
+
+-- 테이블 및 컬럼 코멘트 추가 (선택 사항이지만 권장)
+COMMENT ON TABLE KAMCO_MY_DATA IS '사용자별 공매물건 상호작용 정보 테이블';
+COMMENT ON COLUMN KAMCO_MY_DATA.USER_ID IS '사용자 고유 ID';
+COMMENT ON COLUMN KAMCO_MY_DATA.CLTR_MNMT_NO IS '공매물건 관리 번호 (온비드)';
+COMMENT ON COLUMN KAMCO_MY_DATA.CLTR_HSTR_NO IS '공매물건 이력 번호 (온비드)';
+COMMENT ON COLUMN KAMCO_MY_DATA.REG_DATE IS '최초 등록일시';
+COMMENT ON COLUMN KAMCO_MY_DATA.MOD_DATE IS '최종 수정일시';
+COMMENT ON COLUMN KAMCO_MY_DATA.IS_FAVORITE IS '즐겨찾기 여부 (Y: 즐겨찾기, N: 미등록)';
+COMMENT ON COLUMN KAMCO_MY_DATA.IS_BID IS '입찰 여부 (Y: 입찰, N: 미입찰)';
+COMMENT ON COLUMN KAMCO_MY_DATA.BID_AMOUNT IS '최종 입찰 가격 (입찰 시 Y인 경우에만 의미)';
+
+
+-- 인덱스 추가 (조회 성능 향상, 필요시 추가)
+-- USER_ID 단독으로 조회하는 경우가 많다면 인덱스 고려
+CREATE INDEX IDX_KAMCO_MY_DATA_USER ON KAMCO_MY_DATA (USER_ID);
+-- 즐겨찾기 목록만 조회하는 경우를 위한 인덱스
+CREATE INDEX IDX_KAMCO_MY_DATA_FAV ON KAMCO_MY_DATA (USER_ID, IS_FAVORITE);
+-- 입찰 목록만 조회하는 경우를 위한 인덱스
+CREATE INDEX IDX_KAMCO_MY_DATA_BID ON KAMCO_MY_DATA (USER_ID, IS_BID);
+
+-- 시퀀스 추가 (입찰 내역 관리 등 새로운 레코드가 필요할 경우)
+-- 만약 특정 입찰의 이력까지 저장해야 한다면 이 시퀀스와 함께 이력 테이블 고려
+-- CREATE SEQUENCE KAMCO_MY_DATA_SEQ START WITH 1 INCREMENT BY 1 NOCACHE;
