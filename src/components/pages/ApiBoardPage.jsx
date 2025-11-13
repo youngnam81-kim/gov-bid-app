@@ -8,7 +8,7 @@ import { formatCurrency, formatDateTime } from '../../util/formatters'; // 포�
 
 // 필드 정의: 각 컬럼에 대한 정보 (헤더 이름, 데이터 키, 정렬 가능 여부 등)
 const FIELD_DEFINITIONS = [
-    { key: "cltrMnmtNo", title: "물건관리번호" },
+    { key: "cltrMnmtNo", title: "물건관리번호", sortable: true  },
     // { key: "pbctCdtnNo", title: "공고조건번호" }, 
     // { key: "cltrNo", title: "물건번호" },
     { key: "cltrHstrNo", title: "물건이력번호", sortable: true },
