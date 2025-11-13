@@ -1,23 +1,18 @@
 // src/components/common/LoginButtonAndModal.jsx
-import React, { useState /* useEffect 제거 */ } from 'react';
+import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { logout /* fetchUserInfo 제거 */ } from '../../store/authSlice';
+import { logout } from '../../store/authSlice';
 import LoginModal from '../auth/LoginModal';
 import RegisterModal from '../auth/RegisterModal';
+import { useNavigate } from 'react-router-dom';
 
 function LoginButtonAndModal() {
     const dispatch = useDispatch();
+    const navigate = useNavigate(); 
     const { isAuthenticated, userName } = useSelector((state) => state.auth); // Redux 상태 가져오기
 
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-
-    // useEffect를 제거합니다. (fetchUserInfo 호출 로직 제거)
-    // useEffect(() => {
-    //   if (isAuthenticated && !userName) {
-    //     dispatch(fetchUserInfo());
-    //   }
-    // }, [isAuthenticated, userName, dispatch]); 
 
     const handleLoginClick = () => {
         setIsLoginModalOpen(true);
@@ -25,6 +20,7 @@ function LoginButtonAndModal() {
 
     const handleLogoutClick = () => {
         dispatch(logout());
+        navigate('/');
     };
 
     const handleOpenRegisterFromLogin = () => {

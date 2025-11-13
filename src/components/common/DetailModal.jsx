@@ -4,7 +4,7 @@ import api from '../../api';
 import { formatCurrency, formatBidAmountInput, getImageUrls } from '../../util/formatters';
 import '../../css/DetailModal.css';
 
-const DetailModal = ({ isOpen, onClose, item }) => {
+const DetailModal = ({ isOpen, onClose, item, openPage }) => {
     // 모달이 열려있지 않거나 아이템이 없으면 렌더링하지 않음
     if (!isOpen || !item) return null;
 
@@ -15,9 +15,15 @@ const DetailModal = ({ isOpen, onClose, item }) => {
     const [isLoadingMyData, setIsLoadingMyData] = useState(true);
     const userId = localStorage.getItem('userId');
 
-    // 사용자별 즐겨찾기/입찰 데이터 조회
+    // 사용자별 관심목록/입찰 데이터 조회
     useEffect(() => {
         const fetchUserItemData = async () => {
+
+            if(openPage == 'bidBoard') {
+                console.log('openPage (bidBoard 일때는 세부내역 api 호출할것) : ', openPage);
+                
+            }
+
             if (!userId || !item.cltrMnmtNo || !item.cltrHstrNo) {
                 setIsLoadingMyData(false);
                 return;
@@ -82,10 +88,14 @@ const DetailModal = ({ isOpen, onClose, item }) => {
         if (window.confirm(`${item.cltrNm || '물건'}에 ${formatCurrency(parsedBidAmount)}원으로 입찰하시겠습니까?`)) {
             try {
                 const params = {
-                    userId,
+                    userId: localStorage.getItem('userId'),
                     cltrMnmtNo: item.cltrMnmtNo,
                     cltrHstrNo: item.cltrHstrNo,
-                    isFavorite: isFavorite ? 'Y' : 'N',
+                    ctgrFullNm: item.ctgrFullNm, 
+                    cltrNm: item.cltrNm, 
+                    pbctBegnDtm: item.pbctBegnDtm, 
+                    pbctClsDtm: item.pbctClsDtm,
+                    feeRate: item.feeRate,
                     isBid: 'Y',
                     bidAmount: parsedBidAmount,
                 };
@@ -93,11 +103,14 @@ const DetailModal = ({ isOpen, onClose, item }) => {
                 const response = await api.post('/kamco/modifyMyData', params);
                 if (response.status === 200) {
                     alert('입찰이 성공적으로 처리되었습니다.');
-                    setUserSavedBidAmount(parsedBidAmount);
-                    setIsBid(true);
+                    
+                    setUserSavedBidAmount(response.data.bidAmount);
+                    setBidAmount(formatBidAmountInput(String(response.data.bidAmount)));
+                    setIsBid(response.data.isBid ? 'Y' : 'N');
                 } else {
                     alert('입찰 처리 중 문제가 발생했습니다.');
                 }
+
             } catch (error) {
                 console.error('입찰 처리 중 오류 발생:', error);
                 alert('입찰 처리 중 오류가 발생했습니다.');
@@ -110,39 +123,42 @@ const DetailModal = ({ isOpen, onClose, item }) => {
         setBidAmount(formatBidAmountInput(e.target.value));
     };
 
-    // 즐겨찾기 처리
+    // 관심목록 처리
     const handleFavoriteClick = async () => {
         if (!userId) {
-            alert('로그인 후 즐겨찾기를 할 수 있습니다.');
+            alert('로그인 후 관심목록를 할 수 있습니다.');
             return;
         }
 
         const newFavoriteStatus = !isFavorite;
         const confirmMessage = newFavoriteStatus ?
-            `${item.cltrNm || '물건'}을(를) 즐겨찾기에 추가하시겠습니까?` :
-            `${item.cltrNm || '물건'}을(를) 즐겨찾기에서 제거하시겠습니까?`;
-
+            `${item.cltrNm || '물건'}을(를) 관심목록에 추가하시겠습니까?` :
+            `${item.cltrNm || '물건'}을(를) 관심목록에서 제거하시겠습니까?`;
         if (window.confirm(confirmMessage)) {
             try {
                 const params = {
-                    userId,
+                    userId: localStorage.getItem('userId'),
                     cltrMnmtNo: item.cltrMnmtNo,
                     cltrHstrNo: item.cltrHstrNo,
+                    ctgrFullNm: item.ctgrFullNm, 
+                    cltrNm: item.cltrNm, 
+                    pbctBegnDtm: item.pbctBegnDtm, 
+                    pbctClsDtm: item.pbctClsDtm,
+                    feeRate: item.feeRate,
                     isFavorite: newFavoriteStatus ? 'Y' : 'N',
-                    isBid: isBid ? 'Y' : 'N',
-                    bidAmount: userSavedBidAmount,
                 };
 
                 const response = await api.post('/kamco/modifyMyData', params);
                 if (response.status === 200) {
-                    alert(`즐겨찾기가 성공적으로 ${newFavoriteStatus ? '추가' : '제거'}되었습니다.`);
-                    setIsFavorite(newFavoriteStatus);
+                    //alert(`관심목록가 성공적으로 ${newFavoriteStatus ? '추가' : '제거'}되었습니다.`);
+                    // const { bidAmount, isBid, isFavorite } = response.data;
+                    setIsFavorite(response.data.isFavorite === 'Y');
                 } else {
-                    alert('즐겨찾기 처리 중 문제가 발생했습니다.');
+                    alert('관심목록 처리 중 문제가 발생했습니다.');
                 }
             } catch (error) {
-                console.error('즐겨찾기 처리 중 오류 발생:', error);
-                alert('즐겨찾기 처리 중 오류가 발생했습니다.');
+                console.error('관심목록 처리 중 오류 발생:', error);
+                alert('관심목록 처리 중 오류가 발생했습니다.');
             }
         }
     };
@@ -158,14 +174,14 @@ const DetailModal = ({ isOpen, onClose, item }) => {
                     <div className="detail-loading">사용자 데이터 로딩 중입니다</div>
                 ) : (
                     <>
-                        {/* 액션 영역 (즐겨찾기, 입찰) */}
+                        {/* 액션 영역 (관심목록, 입찰) */}
                         <div className="detail-modal-actions">
                             <div className="detail-modal-actions-left">
                                 <button
                                     onClick={handleFavoriteClick}
                                     className={`detail-btn detail-btn-favorite ${isFavorite ? 'active' : ''}`}
                                 >
-                                    {isFavorite ? '⭐ 즐겨찾기 해제' : '☆ 즐겨찾기 추가'}
+                                    {isFavorite ? '⭐ 관심목록 해제' : '☆ 관심목록'}
                                 </button>
                             </div>
 
@@ -199,28 +215,6 @@ const DetailModal = ({ isOpen, onClose, item }) => {
                         )}
                     </>
                 )}
-
-                {/* 이미지 다운로드 
-                {item.imageLinks?.length > 0 && (
-                    <div className="detail-image-section">
-                        <h3 className="detail-image-title">📷 물건 이미지</h3>
-                        <div className="detail-image-grid">
-                            {item.imageLinks.map((linkInfo, idx) => (
-                                <a
-                                    key={idx}
-                                    href={linkInfo.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="detail-image-link"
-                                >
-                                    이미지 {String(idx + 1).padStart(2, '0')}
-                                </a>
-                            ))}
-                        </div>
-                    </div>
-                )}
-                */}
-
                 {/* 상세정보 테이블 */}
                 <div className="detail-info-section">
                     <h3 className="detail-info-title">📋 상세 정보</h3>
@@ -288,11 +282,12 @@ const DetailModal = ({ isOpen, onClose, item }) => {
                                 <td className="detail-table-label"></td>
                                 <td className="detail-table-value"></td>
                             </tr>
+
                             <tr>
                                 <td className="detail-table-label">이미지</td>
                                 <td className="detail-table-value" colSpan="3">
                                     <div className="detail-image-grid">
-                                        {item.imageLinks.map((linkInfo, idx) => (
+                                        {item.imageLinks && item.imageLinks.map((linkInfo, idx) => (
                                             <a
                                                 key={idx}
                                                 href={linkInfo.url}
@@ -306,10 +301,10 @@ const DetailModal = ({ isOpen, onClose, item }) => {
                                     </div>
                                 </td>
                             </tr>
+
                         </tbody>
                     </table>
                 </div>
-
                 {/* 물품명세 상세 설명 */}
                 {item.goodsNm && (
                     <div className="detail-description-section">

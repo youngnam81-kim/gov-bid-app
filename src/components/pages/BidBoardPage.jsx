@@ -1,55 +1,35 @@
-// src/components/pages/ApiBoardPage.jsx
+// src/components/pages/DashboardPage.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import DetailModal from '../common/DetailModal-backup.jsx';
+import DetailModal from '../common/DetailModal.jsx';
 import api from '../../api/index.js'; // 백엔드 호출용 Axios 인스턴스 임포트
 
 // 필드 정의: 각 컬럼에 대한 정보 (헤더 이름, 데이터 키, 정렬 가능 여부 등)
 const FIELD_DEFINITIONS = [
     { key: "cltrMnmtNo", title: "물건관리번호" },
-    // { key: "pbctCdtnNo", title: "공고조건번호" }, 
-    // { key: "cltrNo", title: "물건번호" },
     { key: "cltrHstrNo", title: "물건이력번호", sortable: true },
-    // { key: "scrnGrpCd", title: "화면그룹코드" },
     { key: "ctgrFullNm", title: "카테고리" },
-    // { key: "bidMnmtNo", title: "입찰관리번호" },
     { key: "cltrNm", title: "물건명" },
-    // { key: "ldnmAdrs", title: "지번주소" },
-    // { key: "nmrdAdrs", title: "도로명주소" },
-    // { key: "ldnmPnu", title: "지번고유번호" },
-    // { key: "dpslMtdCd", title: "처분방법코드" },
-    // { key: "dpslMtdNm", title: "처분방법명" },
-    // { key: "bidMtdNm", title: "입찰방법명" },
-    { key: "minBidPrc", title: "최저입찰가", sortable: true },
-    // { key: "apslAsesAvgAmt", title: "감정평가평균금액" },
     { key: "feeRate", title: "수수료율" },
-    // { key: "pbctNo", title: "공고번호" },
     { key: "pbctBegnDtm", title: "공고시작일시" },
     { key: "pbctClsDtm", title: "공고종료일시" },
-    { key: "pbctCltrStatNm", title: "공고물건상태명" },
-    // { key: "uscbdCnt", title: "유찰회수" },
-    // { key: "iqryCnt", title: "조회건수" },
-    { key: "imageLinks", title: "이미지" },
+    { key: "bidAmount", title: "나의입찰가" },
 ];
 
 
-function ApiBoardPage() {
+function DashboardPage() {
     const { isAuthenticated } = useSelector(state => state.auth);
     const [auctionItems, setAuctionItems] = useState([]); // API로부터 받은 원본 데이터
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const userId = localStorage.getItem('userId');
 
     // 필터링 및 페이징 상태
     const [currentPage, setCurrentPage] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
-    const [prptDvsnCd, setPrptDvsnCd] = useState('0001'); // 물건구분코드
+    const [selectGbn, setSelectGbn] = useState(''); // 조회구분
     const [cltrNm, setCltrNm] = useState(''); // 물건명 검색어
-
-    // 지역 input text 필드
-    const [sido, setSido] = useState('서울특별시');
-    const [sgk, setSgk] = useState('성북구');
-    const [emd, setEmd] = useState('성북동');
 
     // 페이지네이션 관련 상수
     const DEFAULT_NUM_OF_ROWS = 10;
@@ -113,25 +93,21 @@ function ApiBoardPage() {
             const params = {
                 numOfRows: DEFAULT_NUM_OF_ROWS,
                 pageNo: page,
-                prptDvsnCd: currentFilters.prptDvsnCd,
+                userId: userId,
             };
 
-            // 지역 필터 (값이 있을 경우에만 추가)
-            if (currentFilters.sido) params.sido = currentFilters.sido;
-            if (currentFilters.sgk) params.sgk = currentFilters.sgk;
-            if (currentFilters.emd) params.emd = currentFilters.emd;
             if (currentFilters.cltrNm) params.cltrNm = currentFilters.cltrNm;
 
             console.log("백엔드 프록시 API 호출 파라미터:", params);
-            const response = await api.get('/onbid/list', { params });
+            const response = await api.get('/kamco/getMyList', { params });
 
-            console.log("온비드 데이터 응답:", response.data);
-            setAuctionItems(response.data.items || []); // 받아온 데이터를 저장
+            console.log("kamco 데이터 응답:", response.data);
+            setAuctionItems(response.data || []); // 받아온 데이터를 저장
             setTotalCount(response.data.totalCount || 0);
 
         } catch (err) {
-            console.error("온비드 데이터 로드 중 오류 발생:", err);
-            setError("온비드 데이터를 불러오는데 실패했습니다. 백엔드 프록시 API를 확인해주세요.");
+            console.error("kamco 데이터 로드 중 오류 발생:", err);
+            setError("kamco 데이터를 불러오는데 실패했습니다. 백엔드 프록시 API를 확인해주세요.");
             setAuctionItems([]);
             setTotalCount(0);
         } finally {
@@ -145,8 +121,8 @@ function ApiBoardPage() {
             return;
         }
         // 첫 로드 시 현재 필터 상태를 묶어서 fetchAuctionItems에 전달하여 조회
-        fetchAuctionItems(currentPage, { prptDvsnCd, sido, sgk, emd, cltrNm });
-    }, [isAuthenticated, fetchAuctionItems, currentPage, prptDvsnCd, sido, sgk, emd, cltrNm]);
+        fetchAuctionItems(currentPage, { userId, cltrNm });
+    }, [isAuthenticated, fetchAuctionItems, currentPage, userId, cltrNm]);
 
 
     // 검색 실행 및 페이지 변경을 담당하는 함수 (useCallback으로 래핑)
@@ -154,10 +130,10 @@ function ApiBoardPage() {
         setCurrentPage(pageToFetch); // 현재 페이지 상태 업데이트
 
         const currentFilters = { // 현재 필터 값들을 객체로 묶음
-            prptDvsnCd, sido, sgk, emd, cltrNm,
+            userId, cltrNm,
         };
         fetchAuctionItems(pageToFetch, currentFilters); // API 호출
-    }, [prptDvsnCd, sido, sgk, emd, cltrNm, fetchAuctionItems]);
+    }, [userId, cltrNm, fetchAuctionItems]);
 
 
     // 검색 버튼 클릭 핸들러
@@ -297,7 +273,6 @@ function ApiBoardPage() {
         );
     };
 
-    // ==================== UI 스타일 정의 (영남님이 제공해주신 스타일로 업데이트) ====================
     const containerStyle = { padding: '0px', maxWidth: '1600px', margin: '0 auto' };
 
     // 헤더 스타일 (기존 유지, 더 깔끔하게 조정)
@@ -347,22 +322,23 @@ function ApiBoardPage() {
 
     return (
         <div style={containerStyle}>
-            <h1 style={headerStyle}>입찰 물건 조회</h1>
+            <h1 style={headerStyle}>나의 물건 조회</h1>
 
             {/* 필터 영역 */}
             <div style={filterContainerStyle}>
-                <label style={filterGroupStyle_150}>
-                    처분방법:
-                    <select value={prptDvsnCd} onChange={(e) => {
-                        setPrptDvsnCd(e.target.value);
+                <label style={labelStyle}>
+                    물건 목록
+                    <select value={selectGbn} onChange={(e) => {
+                        setSelectGbn(e.target.value);
                         setCurrentPage(1);
                     }} style={selectStyle}>
-                        <option value="0001">매각</option>
-                        <option value="0002">임대</option>
+                        <option value="">전체</option>
+                        <option value="favorite">관심</option>
+                        <option value="bid">입찰</option>
                     </select>
                 </label>
                 <div style={filterGroupStyle_300}>
-                    <label htmlFor="cltrNm" style={labelStyle}>물건 부분 검색</label>
+                    <label htmlFor="cltrNm" style={labelStyle}>물건명 부분 검색</label>
                     <input
                         type="text"
                         id="cltrNm"
@@ -372,6 +348,7 @@ function ApiBoardPage() {
                         style={inputStyle} // inputStyle 적용
                     />
                 </div>
+
                 (총 {totalCount}건)<button onClick={handleSearchButtonClick} style={searchButtonStyle}>조회</button>
                 {/* <button onClick={handleSearchButtonClick} style={searchButtonStyle}>검색</button> */}
             </div>
@@ -422,7 +399,7 @@ function ApiBoardPage() {
                                                     {item[field.key] || '-'}
                                                 </span>
                                             ) :
-                                                field.key === "minBidPrc" ? ( // 최저입찰가에 통화 포맷 적용
+                                                field.key === "bidAmount" ? ( // 최저입찰가에 통화 포맷 적용
                                                     formatCurrency(item[field.key])
                                                 ) :
                                                     field.key === "pbctBegnDtm" || field.key === "pbctClsDtm" ? ( // 공고시작/종료일시에 날짜 포맷 적용
@@ -467,10 +444,11 @@ function ApiBoardPage() {
                     isOpen={isModalOpen}
                     onClose={closeDetailModal}
                     item={selectedItem}
+                    openPage="bidBoard"
                 />
             )}
         </div>
     );
 }
 
-export default ApiBoardPage;
+export default DashboardPage;

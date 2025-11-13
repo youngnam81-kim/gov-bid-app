@@ -5,6 +5,11 @@ CREATE TABLE KAMCO_MY_DATA (
     USER_ID         VARCHAR2(255)       NOT NULL,   -- 사용자 ID (Primary Key의 일부)
     CLTR_MNMT_NO    VARCHAR2(20)        NOT NULL,   -- 공매물건 관리 번호 (Primary Key의 일부)
     CLTR_HSTR_NO    VARCHAR2(10)        NOT NULL,   -- 공매물건 이력 번호 (Primary Key의 일부)
+    CTGR_FULL_NM      VARCHAR2(50),       -- 카테고리
+    CLTR_NM          VARCHAR2(255),      -- 물건명
+    PBCT_BEGN_DTM     VARCHAR2(20),       -- 공고시작일시
+    PBCT_CLS_DTM      VARCHAR2(20),       -- 공고종료일시
+    FEE_RATE      VARCHAR2(10),       -- 수수료율
     IS_FAVORITE     CHAR(1)             DEFAULT 'N' NOT NULL, -- 즐겨찾기 여부 ('Y', 'N')
     IS_BID          CHAR(1)             DEFAULT 'N' NOT NULL, -- 입찰 여부 ('Y', 'N')
     BID_AMOUNT      NUMBER(15),                  -- 입찰 가격
@@ -32,7 +37,12 @@ COMMENT ON COLUMN KAMCO_MY_DATA.REG_DATE IS '최초 등록일시';
 COMMENT ON COLUMN KAMCO_MY_DATA.MOD_DATE IS '최종 수정일시';
 COMMENT ON COLUMN KAMCO_MY_DATA.IS_FAVORITE IS '즐겨찾기 여부 (Y: 즐겨찾기, N: 미등록)';
 COMMENT ON COLUMN KAMCO_MY_DATA.IS_BID IS '입찰 여부 (Y: 입찰, N: 미입찰)';
-COMMENT ON COLUMN KAMCO_MY_DATA.BID_AMOUNT IS '최종 입찰 가격 (입찰 시 Y인 경우에만 의미)';
+COMMENT ON COLUMN KAMCO_MY_DATA.BID_AMOUNT IS '최종 입찰 가격';
+COMMENT ON COLUMN KAMCO_MY_DATA.CTGR_FULL_NM IS '카테고리';
+COMMENT ON COLUMN KAMCO_MY_DATA.CLTR_NM IS '물건명';
+COMMENT ON COLUMN KAMCO_MY_DATA.PBCT_BEGN_DTM IS '공고시작일시';
+COMMENT ON COLUMN KAMCO_MY_DATA.PBCT_CLS_DTM IS '공고종료일시';
+COMMENT ON COLUMN KAMCO_MY_DATA.FEE_RATE IS '수수료율';
 
 
 -- 인덱스 추가 (조회 성능 향상, 필요시 추가)

@@ -31,7 +31,7 @@ const FIELD_DEFINITIONS = [
     { key: "pbctCltrStatNm", title: "공고물건상태명" },
     // { key: "uscbdCnt", title: "유찰회수" },
     // { key: "iqryCnt", title: "조회건수" },
-    { key: "imageLinks", title: "이미지" },
+    // { key: "imageLinks", title: "이미지" },
 ];
 
 
@@ -256,7 +256,6 @@ function ApiBoardPage() {
         );
     };
 
-    // ==================== UI 스타일 정의 (영남님이 제공해주신 스타일로 업데이트) ====================
     const containerStyle = { padding: '0px', maxWidth: '1600px', margin: '0 auto' };
 
     // 헤더 스타일 (기존 유지, 더 깔끔하게 조정)
@@ -296,17 +295,14 @@ function ApiBoardPage() {
     const errorTextStyle = { ...loadingStyle, color: 'red' }; // 에러 메시지 스타일 분리
     const noDataStyle = { ...loadingStyle, color: '#6c757d' }; // 데이터 없음 메시지 (기존과 동일하게)
 
-    // =========================================================================================
-
-
     return (
         <div style={containerStyle}>
             <h1 style={headerStyle}>온비드 공매 물건 조회</h1>
 
             {/* 필터 영역 */}
             <div style={filterContainerStyle}>
-                <label style={filterGroupStyle}>
-                    처분방법:
+                <label style={labelStyle}>
+                    처분방법
                     <select value={prptDvsnCd} onChange={(e) => {
                         setPrptDvsnCd(e.target.value);
                         setCurrentPage(1);
@@ -360,7 +356,6 @@ function ApiBoardPage() {
                     />
                 </div>
                 (총 {totalCount}건)<button onClick={handleSearchButtonClick} style={searchButtonStyle}>조회</button>
-                {/* <button onClick={handleSearchButtonClick} style={searchButtonStyle}>검색</button> */}
             </div>
 
 
@@ -454,6 +449,7 @@ function ApiBoardPage() {
                     isOpen={isModalOpen}
                     onClose={closeDetailModal}
                     item={selectedItem}
+                    openPage="apiBoard"
                 />
             )}
         </div>
